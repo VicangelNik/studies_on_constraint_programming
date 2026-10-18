@@ -105,6 +105,16 @@ public class Queen8Problem extends CpProblem {
     }
   }
 
+  private void allColumnsAreDifferent(IntVar[][] modelVars) {
+    List<TuplePos> positionsColumnList = new ArrayList<>();
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 8; j++) {
+        positionsColumnList.add(new TuplePos(j, i));
+      }
+      applyAllDifferent(modelVars, positionsColumnList);
+    }
+  }
+
   private void applyAllDifferent(IntVar[][] modelVars, List<TuplePos> positionsDiagonalList) {
     IntVar[] varsD = new IntVar[positionsDiagonalList.size()];
     for (int t = 0; t < positionsDiagonalList.size(); t++) {
@@ -113,20 +123,6 @@ public class Queen8Problem extends CpProblem {
     }
     model.allDifferent(varsD).post();
     positionsDiagonalList.clear();
-  }
-
-  private void allColumnsAreDifferent(IntVar[][] modelVars) {
-    IntVar[] vars = new IntVar[8];
-    int t = 0;
-    for (int j = 0; j < 8; j++) {
-      for (int i = 0; i < 8; i++) {
-        vars[t] = modelVars[i][j];
-        t++;
-      }
-      model.allDifferent(vars).post();
-      vars = new IntVar[8];
-      t = 0;
-    }
   }
 
   public List<Integer[][]> getSolutions() {
