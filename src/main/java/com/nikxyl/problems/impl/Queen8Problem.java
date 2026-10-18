@@ -89,25 +89,30 @@ public class Queen8Problem extends CpProblem {
   }
 
   private void allRowsAreDifferent(IntVar[][] modelVars) {
-    IntVar[] vars = new IntVar[8];
-    int t = 0;
+    List<TuplePos> positionsRowList = new ArrayList<>();
+    List<TuplePos> positionsDiagonalList = new ArrayList<>();
     // all rows are different
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 8; j++) {
-        vars[t] = modelVars[i][j];
-//        System.out.println("Standard: " + modelVars[i][j].toString());
-//        if (j < 7) {
-//          System.out.println("1: " + modelVars[i][j + 1].toString());
-//        }
-//        if (j > 0) {
-//          System.out.println("2: " + modelVars[i][j - 1].toString());
-//        }
-        t++;
+        positionsRowList.add(new TuplePos(i, j));
+        for (int k = i, l = j; k < 8 && l < 8; k++, l++) {
+          positionsDiagonalList.add(new TuplePos(k, l));
+        }
+        applyAllDifferent(modelVars, positionsDiagonalList);
       }
-      model.allDifferent(vars).post();
-      vars = new IntVar[8];
-      t = 0;
+
+      applyAllDifferent(modelVars, positionsRowList);
     }
+  }
+
+  private void applyAllDifferent(IntVar[][] modelVars, List<TuplePos> positionsDiagonalList) {
+    IntVar[] varsD = new IntVar[positionsDiagonalList.size()];
+    for (int t = 0; t < positionsDiagonalList.size(); t++) {
+      TuplePos tp = positionsDiagonalList.get(t);
+      varsD[t] = modelVars[tp.r][tp.c];
+    }
+    model.allDifferent(varsD).post();
+    positionsDiagonalList.clear();
   }
 
   private void allColumnsAreDifferent(IntVar[][] modelVars) {
@@ -144,4 +149,6 @@ public class Queen8Problem extends CpProblem {
     }
     return matrix;
   }
+
+  private record TuplePos(int r, int c) {}
 }
