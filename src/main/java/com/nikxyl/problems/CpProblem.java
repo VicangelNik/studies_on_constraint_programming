@@ -8,23 +8,23 @@ import org.chocosolver.solver.variables.IntVar;
 public abstract class CpProblem {
 
   protected Model model;
-  protected static final int MAX_SOLUTIONS = 1;
+  protected static final int MAX_SOLUTIONS = 3;
 
-  public abstract List<Integer[][]> solve();
+  public abstract List<String[][]> solve();
 
-  public abstract IntVar[][] createModelAndVariables();
+  public abstract IntVar[] createModelAndVariables();
 
-  public abstract void setConstraints(IntVar[][] modelVars);
+  public abstract void setConstraints(IntVar[] modelVars);
 
-  public abstract List<Integer[][]> getSolutions();
+  public abstract List<String[][]> getSolutions();
 
-  public abstract Integer[][] getMatrix(IntVar[] cells);
+  public abstract String[][] getMatrix(IntVar[] cells);
 
-  public void printSolution(List<Integer[][]> solutions) {
+  public void printSolution(List<String[][]> solutions) {
 
-    for (Integer[][] matrix : solutions) {
-      for (Integer[] rows : matrix) {
-        for (Integer cell : rows) {
+    for (String[][] matrix : solutions) {
+      for (String[] rows : matrix) {
+        for (String cell : rows) {
           System.out.print(cell + " ");
         }
         System.out.println();

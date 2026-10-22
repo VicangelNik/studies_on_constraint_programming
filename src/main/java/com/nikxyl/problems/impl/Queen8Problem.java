@@ -15,136 +15,64 @@ import com.nikxyl.problems.CpProblem;
  */
 public class Queen8Problem extends CpProblem {
 
-  public List<Integer[][]> solve() {
-    IntVar[][] modelVars = createModelAndVariables();
+  private final int nQueens = 8;
+
+  public List<String[][]> solve() {
+    IntVar[] modelVars = createModelAndVariables();
     setConstraints(modelVars);
 
     return getSolutions();
   }
 
-  public IntVar[][] createModelAndVariables() {
+  public IntVar[] createModelAndVariables() {
     model = new Model("Queen8Problem");
 
-    return model.intVarMatrix("queens", 8, 8, 1, 8);
+    return model.intVarArray("Q", nQueens, 1, nQueens, false);
   }
 
-  public void setConstraints(IntVar[][] modelVars) {
-    allRowsAreDifferent(modelVars);
+  public void setConstraints(IntVar[] modelVars) {
+    // Rule 1: No two queens can be in the same column
+    model.allDifferent(modelVars).post();
 
-    allColumnsAreDifferent(modelVars);
+    for (int i = 0; i < nQueens; i++) {
+      for (int j = i + 1; j < nQueens; j++) {
+        // Diagonal 1: Column_i # Column_j + (j-i) (Downward-sloping: ↘)
+        model.arithm(modelVars[i], "!=", modelVars[j], "+", j - i).post();
 
-    // all diagonals are different downwards left -> right
-//    int i = 0;
-//    while (i < 7) { // skip the last one as it is not a diagonal - just one value
-//      IntVar[] varsD = new IntVar[8 - i];
-//      int step = 0;
-//      for (int j = i; j < 8; j++) {
-//        varsD[step] = modelVars[j][step];
-//        step++;
-//      }
-//      model.allDifferent(varsD).post();
-//      i++;
-//    }
-
-    // all diagonals are different downwards right -> left
-//    int l = 0;
-//    while (l < 7) {
-//      IntVar[] varsD = new IntVar[8 - l];
-//      int step = 0;
-//      for (int k = 7 - l; k >= 0; k--) {
-//        varsD[step] = modelVars[step][k];
-//        step++;
-//      }
-//      model.allDifferent(varsD).post();
-//      l++;
-//    }
-
-//    7 2 1 4 3 5 8 6
-//    1 4 8 6 2 7 3 5
-//    3 6 5 8 4 1 2 7
-//    5 8 3 1 7 6 4 2
-//    4 7 6 2 8 3 5 1
-//    6 3 4 7 5 2 1 8
-//    2 5 7 3 1 8 6 4
-//    8 1 2 5 6 4 7 3
-
-    // all diagonals are different right top -> right bottom without the big diagonal (previously done)
-    // 17, 26, 35, 44, 53, 62, 71
-    // 27, 36, 45, 54, 63, 72
-    // 37, 46, 55, 64, 73
-
-//    l = 1;
-//    while (l < 6) {
-//      IntVar[] varsD = new IntVar[8 - l];
-//      int step = l;
-//      int t1 = 0;
-//      for (int k = 7; k >= l; k--) {
-//        varsD[t1] = modelVars[step][k];
-//        step++;
-//        t1++;
-//      }
-//      model.allDifferent(varsD).post();
-//      l++;
-//    }
-  }
-
-  private void allRowsAreDifferent(IntVar[][] modelVars) {
-    List<TuplePos> positionsRowList = new ArrayList<>();
-    List<TuplePos> positionsDiagonalList = new ArrayList<>();
-    // all rows are different
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 8; j++) {
-        positionsRowList.add(new TuplePos(i, j));
-        for (int k = i, l = j; k < 8 && l < 8; k++, l++) {
-          positionsDiagonalList.add(new TuplePos(k, l));
-        }
-        applyAllDifferent(modelVars, positionsDiagonalList);
+        // Diagonal 2: Column_i # Column_j - (j-i)  (Upward-sloping: ↗)
+        model.arithm(modelVars[i], "!=", modelVars[j], "-", j - i).post();
       }
-
-      applyAllDifferent(modelVars, positionsRowList);
     }
   }
 
-  private void allColumnsAreDifferent(IntVar[][] modelVars) {
-    List<TuplePos> positionsColumnList = new ArrayList<>();
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 8; j++) {
-        positionsColumnList.add(new TuplePos(j, i));
-      }
-      applyAllDifferent(modelVars, positionsColumnList);
-    }
-  }
-
-  private void applyAllDifferent(IntVar[][] modelVars, List<TuplePos> positionsDiagonalList) {
-    IntVar[] varsD = new IntVar[positionsDiagonalList.size()];
-    for (int t = 0; t < positionsDiagonalList.size(); t++) {
-      TuplePos tp = positionsDiagonalList.get(t);
-      varsD[t] = modelVars[tp.r][tp.c];
-    }
-    model.allDifferent(varsD).post();
-    positionsDiagonalList.clear();
-  }
-
-  public List<Integer[][]> getSolutions() {
-    List<Integer[][]> matrix = new ArrayList<>();
+  public List<String[][]> getSolutions() {
+    List<String[][]> matrix = new ArrayList<>();
     int solutionCount = 0;
-    while (solutionCount++ < MAX_SOLUTIONS && model.getSolver().solve()) {
-      IntVar[] cells = model.retrieveIntVars(true);
-      matrix.add(getMatrix(cells));
-      model.getSolver().reset();
-    }
-    return matrix;
-  }
-
-  public Integer[][] getMatrix(IntVar[] cells) {
-    Integer[][] matrix = new Integer[8][8];
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 8; j++) {
-        matrix[i][j] = cells[i * 8 + j].getValue();
+    while (solutionCount++ < MAX_SOLUTIONS) {
+      if (model.getSolver().solve()) {
+        IntVar[] cells = model.retrieveIntVars(false);
+        matrix.add(getMatrix(cells));
+        model.getSolver().reset();
+      } else {
+        System.out.printf("No solution found on try {%s}.%n", solutionCount);
       }
     }
     return matrix;
   }
 
-  private record TuplePos(int r, int c) {}
+  public String[][] getMatrix(IntVar[] cells) {
+    String[][] matrix = new String[nQueens][nQueens];
+
+    for (int i = 0; i < nQueens; i++) {
+      IntVar c = cells[i];
+      for (int j = 1; j <= nQueens; j++) {
+        if (j == c.getValue()) {
+          matrix[i][j - 1] = c.getName();
+        } else {
+          matrix[i][j - 1] = ".   ";
+        }
+      }
+    }
+    return matrix;
+  }
 }
